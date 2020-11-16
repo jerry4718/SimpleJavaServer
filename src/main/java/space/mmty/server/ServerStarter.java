@@ -9,12 +9,15 @@ import org.apache.log4j.Logger;
 import space.mmty.annotation.Controller;
 import space.mmty.annotation.ServerMain;
 import space.mmty.constant.HttpMethods;
+import space.mmty.exception.Message;
 import space.mmty.util.AnnotationUtil;
 import space.mmty.util.HandlerUtil;
 import space.mmty.util.PackageUtil;
 import space.mmty.util.ResponseUtil;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -72,44 +75,64 @@ public class ServerStarter {
 
     public static Consumer<Controller> initController(HttpServer server, Class<?> klass) {
         return controller -> {
+            logger.debug(controller.toString());
             logger.debug(klass.getTypeName());
-            logger.debug(JSONObject.toJSONString(controller.toString()));
 
-            Controller.Api[] apis = controller.api();
-            for (Controller.Api api : apis) {
-                List<String> methods = Stream.of(api.methods())
-                        .map(HttpMethods::getMethod)
-                        .collect(Collectors.toList());
+            Object handler = null;
+            try {
+                handler = klass.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            Object finalHandler = handler;
 
-                HttpHandler handler = null;
-                try {
-                    handler = (HttpHandler) klass.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    e.printStackTrace();
+            Method[] methods = klass.getMethods();
+
+            for (Method method : methods) {
+                if (!method.isAnnotationPresent(Controller.Control.class)) {
+                    continue;
                 }
 
-                HttpHandler finalHandler = handler;
-                server.createContext(api.url(), httpExchange -> {
-                    /*try {*/
-                    // 处理跨域
-                    if (HandlerUtil.crosPack(httpExchange)) {
-                        return;
-                    }
+                Controller.Control control = method.getAnnotation(Controller.Control.class);
+                Controller.Api[] apis = control.api();
 
-                    String requestMethod = httpExchange.getRequestMethod();
-                    logger.info(requestMethod + " " + api.url() + "");
-                    // 过滤method
-                    if (!methods.contains(requestMethod)) {
-                        ResponseUtil.end(httpExchange, 404);
-                        return;
-                    }
+                logger.debug(control.toString());
+                logger.debug(klass.getTypeName() + "#" + method.getName());
 
-                    finalHandler.handle(httpExchange);
-                    /*} catch (IllegalAccessException | InstantiationException e) {
-                        e.printStackTrace();
-                        ResponseUtil.end(httpExchange, 500, e.getMessage());
-                    }*/
-                });
+                for (Controller.Api api : apis) {
+                    List<String> httpMethods = Stream.of(api.methods())
+                            .map(HttpMethods::getMethod)
+                            .collect(Collectors.toList());
+
+                    server.createContext(api.url(), httpExchange -> {
+                        // 处理跨域
+                        if (HandlerUtil.crosPack(httpExchange)) {
+                            return;
+                        }
+
+                        String requestMethod = httpExchange.getRequestMethod();
+                        logger.info(requestMethod + " " + api.url() + "");
+                        // 过滤method
+                        if (!httpMethods.contains(requestMethod)) {
+                            ResponseUtil.end(httpExchange, 404);
+                            return;
+                        }
+
+                        try {
+                            Object responseObj = method.invoke(finalHandler, httpExchange);
+                            if (responseObj != null) {
+                                String response = responseObj.toString();
+                                ResponseUtil.end(httpExchange, 200, response);
+                            }
+                        } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+                            e.printStackTrace();
+                            ResponseUtil.end(httpExchange, 500, e.getMessage());
+                        } catch (Message e) {
+                            e.printStackTrace();
+                            ResponseUtil.end(httpExchange, 501, e.getMessage());
+                        }
+                    });
+                }
             }
         };
     }

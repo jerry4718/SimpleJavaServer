@@ -10,12 +10,17 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Controller {
-    Api[] api();
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface Control {
+        Api[] api();
+    }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({})
     @interface Api {
         HttpMethods[] methods() default {HttpMethods.GET};
+
         String url();
     }
 }

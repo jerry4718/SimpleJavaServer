@@ -15,13 +15,13 @@ import space.mmty.util.SecuritySHA1Utils;
 import java.text.MessageFormat;
 import java.util.*;
 
-@Controller(api = {
-        @Controller.Api(url = "/wxSignature", methods = {HttpMethods.GET, HttpMethods.POST})
-})
-public class WxSignatureController extends BaseController {
+@Controller()
+public class WxSignatureController {
     private static final Logger logger = Logger.getLogger(WxSignatureController.class);
 
-    @Override
+    @Controller.Control(api = {
+            @Controller.Api(url = "/wxSignature", methods = {HttpMethods.GET, HttpMethods.POST})
+    })
     public String control(HttpExchange exchange) {
         String query = exchange.getRequestURI().getQuery();
         logger.info(query);

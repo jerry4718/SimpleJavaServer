@@ -4,13 +4,13 @@ import com.sun.net.httpserver.HttpExchange;
 import space.mmty.annotation.Controller;
 import space.mmty.constant.HttpMethods;
 
-@Controller(api = {
-        @Controller.Api(url = "/", methods = {HttpMethods.GET, HttpMethods.POST}),
-        @Controller.Api(url = "/test", methods = {HttpMethods.GET, HttpMethods.POST})
-})
-public class TestController extends BaseController {
+@Controller()
+public class TestController {
 
-    @Override
+    @Controller.Control(api = {
+            @Controller.Api(url = "/", methods = {HttpMethods.GET, HttpMethods.POST}),
+            @Controller.Api(url = "/test", methods = {HttpMethods.GET, HttpMethods.POST})
+    })
     public String control(HttpExchange exchange) {
         StringBuilder response = new StringBuilder();
 
