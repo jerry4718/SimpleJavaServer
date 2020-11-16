@@ -1,7 +1,6 @@
 package space.mmty.server;
 
 import com.alibaba.fastjson.JSONObject;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -89,51 +88,54 @@ public class ServerStarter {
             Method[] methods = klass.getMethods();
 
             for (Method method : methods) {
-                if (!method.isAnnotationPresent(Controller.Control.class)) {
-                    continue;
-                }
-
-                Controller.Control control = method.getAnnotation(Controller.Control.class);
-                Controller.Api[] apis = control.api();
-
-                logger.debug(control.toString());
-                logger.debug(klass.getTypeName() + "#" + method.getName());
-
-                for (Controller.Api api : apis) {
-                    List<String> httpMethods = Stream.of(api.methods())
-                            .map(HttpMethods::getMethod)
-                            .collect(Collectors.toList());
-
-                    server.createContext(api.url(), httpExchange -> {
-                        // 处理跨域
-                        if (HandlerUtil.crosPack(httpExchange)) {
-                            return;
-                        }
-
-                        String requestMethod = httpExchange.getRequestMethod();
-                        logger.info(requestMethod + " " + api.url() + "");
-                        // 过滤method
-                        if (!httpMethods.contains(requestMethod)) {
-                            ResponseUtil.end(httpExchange, 404);
-                            return;
-                        }
-
-                        try {
-                            Object responseObj = method.invoke(finalHandler, httpExchange);
-                            if (responseObj != null) {
-                                String response = responseObj.toString();
-                                ResponseUtil.end(httpExchange, 200, response);
-                            }
-                        } catch (IOException | IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                            ResponseUtil.end(httpExchange, 500, e.getMessage());
-                        } catch (Message e) {
-                            e.printStackTrace();
-                            ResponseUtil.end(httpExchange, 501, e.getMessage());
-                        }
-                    });
-                }
+                AnnotationUtil.execIfIsPresent(method, Controller.Control.class)
+                        .accept(initControlMethod(server, klass, finalHandler, method));
             }
         };
     }
+
+    public static Consumer<Controller.Control> initControlMethod(HttpServer server, Class<?> klass, Object handler, Method method) {
+        return control -> {
+            Controller.Api[] apis = control.api();
+
+            logger.debug(control.toString());
+            logger.debug(klass.getTypeName() + "#" + method.getName());
+
+            for (Controller.Api api : apis) {
+                List<String> httpMethods = Stream.of(api.methods())
+                        .map(HttpMethods::getMethod)
+                        .collect(Collectors.toList());
+
+                server.createContext(api.url(), httpExchange -> {
+                    // 处理跨域
+                    if (HandlerUtil.crosPack(httpExchange)) {
+                        return;
+                    }
+
+                    String requestMethod = httpExchange.getRequestMethod();
+                    logger.info(requestMethod + " " + api.url() + "");
+                    // 过滤method
+                    if (!httpMethods.contains(requestMethod)) {
+                        ResponseUtil.end(httpExchange, 404);
+                        return;
+                    }
+
+                    try {
+                        Object responseObj = method.invoke(handler, httpExchange);
+                        if (responseObj != null) {
+                            String response = responseObj.toString();
+                            ResponseUtil.end(httpExchange, 200, response);
+                        }
+                    } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+                        e.printStackTrace();
+                        ResponseUtil.end(httpExchange, 500, e.getMessage());
+                    } catch (Message e) {
+                        e.printStackTrace();
+                        ResponseUtil.end(httpExchange, 501, e.getMessage());
+                    }
+                });
+            }
+        };
+    }
+
 }
