@@ -2,9 +2,7 @@ package space.mmty.server;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sun.net.httpserver.HttpServer;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.log4j.*;
 import space.mmty.annotation.Controller;
 import space.mmty.annotation.ServerMain;
 import space.mmty.constant.HttpMethods;
@@ -36,12 +34,7 @@ public class ServerStarter {
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     static {
-        /*ConsoleAppender appender = new ConsoleAppender(
-                new PatternLayout("[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n")
-        );*/
-
-        // appender.setName("ServerStarterConsoleAppender");
-        BasicConfigurator.configure(/*appender*/);
+        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n")));
         root_logger.setLevel(Level.DEBUG);
     }
 
