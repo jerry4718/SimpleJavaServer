@@ -2,6 +2,7 @@ package space.mmty.util;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import space.mmty.constant.HttpMethods;
 
 import java.io.IOException;
 
@@ -15,7 +16,7 @@ public class HandlerUtil {
         responseHeaders.add("Access-Control-Allow-Credentials", "true");
         responseHeaders.add("Access-Control-Allow-Headers", "Postman-Token,User-Agent,Cache-Control,Origin,Content-Type,Accept,X-Requested-With");
 
-        if (requestMethod.equals("OPTIONS")) {
+        if (HttpMethods.OPTIONS.getMethod().equals(requestMethod)) {
             ResponseUtil.end(exchange);
             return true;
         }
