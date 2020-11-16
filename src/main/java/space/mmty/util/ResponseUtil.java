@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class ResponseUtil {
     public static void end(HttpExchange httpExchange, Integer code, String message) throws IOException {
-        httpExchange.sendResponseHeaders(code, 0);
+        httpExchange.sendResponseHeaders(code, message.length());
         httpExchange.getResponseBody().write(message.getBytes());
         httpExchange.getResponseBody().close();
     }
