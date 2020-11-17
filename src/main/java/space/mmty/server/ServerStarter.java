@@ -160,7 +160,7 @@ public class ServerStarter {
                     }
 
                     if (restHolder.containsKey(httpMethod)) {
-                        logger.warn("method \"" + httpMethod.getMethod() + "\" " + url + " has already exist, that old one will be covered");
+                        logger.warn("method \"" + httpMethod.getMethod() + "\" " + url + " has already exist, that prev one will be covered");
                     }
 
                     restHolder.put(httpMethod, option);
