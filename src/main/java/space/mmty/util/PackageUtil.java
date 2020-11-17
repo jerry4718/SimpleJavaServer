@@ -39,7 +39,7 @@ public class PackageUtil {
         }
     }
 
-    private static void scanJarPacket(URL url, Consumer<Class<?>> dealClass) throws IOException {
+    private static void scanJarPacket(String packetName, URL url, Consumer<Class<?>> dealClass) throws IOException {
         JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
         JarFile jarFile = jarURLConnection.getJarFile();
         Enumeration<JarEntry> jarEntries = jarFile.entries();
@@ -50,6 +50,9 @@ public class PackageUtil {
                 continue;
             }
             String className = jarName.replace(".class", "").replaceAll("/", ".");
+            if (!className.startsWith(packetName)) {
+                continue;
+            }
             try {
                 Class<?> klass = Class.forName(className);
                 if (klass.isAnnotation()
@@ -59,7 +62,7 @@ public class PackageUtil {
                     continue;
                 }
                 dealClass.accept(klass);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException | NoClassDefFoundError e) {
                 logger.error("class deal error", e);
             }
         }
@@ -73,7 +76,7 @@ public class PackageUtil {
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 if (url.getProtocol().equals("jar")) {
-                    scanJarPacket(url, dealClass);
+                    scanJarPacket(packetName, url, dealClass);
                 } else {
                     File file = new File(url.toURI());
                     if (!file.exists()) {

@@ -5,11 +5,21 @@ plugins {
 group 'space.mmty'
 version '1.0-SNAPSHOT'
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'space.mmty.server.ServerStarter'
+        // attributes 'Class-Path': fileTree(dir: 'libs', include: ['*.jar'])
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation(fileTree(dir:'libs',include: ['*.jar']))
+    compile(fileTree(dir:'libs',include: ['*.jar']))
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

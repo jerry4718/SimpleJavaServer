@@ -2,22 +2,21 @@ package space.mmty.server;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.*;
 import space.mmty.annotation.Controller;
 import space.mmty.annotation.ServerMain;
 import space.mmty.constant.HttpMethod;
 import space.mmty.exception.Message;
 import space.mmty.module.HttpMethodInvokeOption;
-import space.mmty.util.AnnotationUtil;
-import space.mmty.util.HandlerUtil;
-import space.mmty.util.PackageUtil;
-import space.mmty.util.ResponseUtil;
+import space.mmty.util.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,16 +32,31 @@ public class ServerStarter {
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    static {
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n")));
-        root_logger.setLevel(Level.DEBUG);
-    }
-
     public static void main(String[] args) {
+        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n")));
+
+        Map<String, List<String>> params = RequestUtil.parseParams(StringUtils.join(args, "&"));
+
+        List<String> loglevelParams = params.get("loglevel");
+
+        if (loglevelParams.isEmpty()) {
+            root_logger.setLevel(Level.DEBUG);
+        } else {
+            root_logger.setLevel(Level.toLevel(loglevelParams.get(0)));
+        }
+
+        System.out.println(JSONObject.toJSONString(args));
+
         AnnotationUtil.execIfIsPresent(ServerStarter.class, ServerMain.class)
                 .accept(serverMain -> {
                     try {
                         int port = serverMain.port();
+
+                        List<String> portParams = params.get("port");
+                        if (!portParams.isEmpty()) {
+                            port = Integer.parseInt(portParams.get(0));
+                        }
+
                         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
                         server.setExecutor(executor);
 
