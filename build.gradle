@@ -8,7 +8,6 @@ version '1.0-SNAPSHOT'
 jar {
     manifest {
         attributes 'Main-Class': 'space.mmty.server.ServerStarter'
-        // attributes 'Class-Path': fileTree(dir: 'libs', include: ['*.jar'])
     }
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
