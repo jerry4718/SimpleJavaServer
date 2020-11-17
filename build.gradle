@@ -7,9 +7,11 @@ version '1.0-SNAPSHOT'
 
 jar {
     manifest {
+        // 指定启动类
         attributes 'Main-Class': 'space.mmty.server.ServerStarter'
     }
     from {
+        // 将compile的内容收集过来
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }

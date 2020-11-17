@@ -5,14 +5,29 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class RequestUtil {
+    /**
+     * 返回一个包裹params的ParamGetter
+     * @param query "?key=value&key=value"
+     * @return 结构 {params: Map&lt;String, List&lt;String>>}
+     */
     public static ParamGetter packParams(String query) {
         return new ParamGetter(parseParams(query));
     }
 
+    /**
+     * 返回一个包裹params的ParamGetter
+     * @param splits [key=value, key=value]
+     * @return 结构 {params: Map&lt;String, List&lt;String>>}
+     */
     public static ParamGetter packParams(String[] splits) {
         return new ParamGetter(parseParams(splits));
     }
 
+    /**
+     * 将传入的参数处理成 Map&lt;String, List&lt;String>> 的Map对象
+     * @param query "?key=value&key=value"
+     * @return 结构 Map&lt;String, List&lt;String>>
+     */
     public static Map<String, List<String>> parseParams(String query) {
         if (query == null) {
             return new HashMap<>();
@@ -22,6 +37,11 @@ public class RequestUtil {
         return parseParams(splits);
     }
 
+    /**
+     * 将传入的参数处理成 Map&lt;String, List&lt;String>> 的Map对象
+     * @param splits [key=value, key=value]
+     * @return 结构 Map&lt;String, List&lt;String>>
+     */
     public static Map<String, List<String>> parseParams(String[] splits) {
         Map<String, List<String>> params = new HashMap<>();
 
@@ -70,6 +90,9 @@ public class RequestUtil {
         return defaultValue.get();
     }
 
+    /**
+     * 包裹params的类，结构 {params: Map&lt;String, List&lt;String>>}
+     */
     public static class ParamGetter {
         private final Map<String, List<String>> params;
 
