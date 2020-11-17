@@ -68,7 +68,7 @@ public class ServerStarter {
                 PackageUtil.scanPacket(
                         controllerPackage,
                         klass -> AnnotationUtil.execIfIsPresent(klass, Controller.class)
-                                .accept(initController(server, klass, restMapper))
+                                .accept(initController(klass, restMapper))
                 );
             }
 
@@ -112,7 +112,7 @@ public class ServerStarter {
         };
     }
 
-    public static Consumer<Controller> initController(HttpServer server, Class<?> klass, Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper) {
+    public static Consumer<Controller> initController(Class<?> klass, Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper) {
         return controller -> {
             logger.debug(controller.toString());
             logger.debug(klass.getTypeName());
@@ -129,18 +129,17 @@ public class ServerStarter {
 
             for (Method method : methods) {
                 AnnotationUtil.execIfIsPresent(method, Controller.Control.class)
-                        .accept(initRestMapper(klass, restMapper, new HttpMethodInvokeOption(method, handler)));
+                        .accept(initRestMapper(restMapper, new HttpMethodInvokeOption(method, handler)));
             }
-            // initControlMethod(server, klass, finalHandler, method)
         };
     }
 
-    public static Consumer<Controller.Control> initRestMapper(Class<?> klass, Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper, HttpMethodInvokeOption option) {
+    public static Consumer<Controller.Control> initRestMapper(Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper, HttpMethodInvokeOption option) {
         return control -> {
             Controller.Api[] apis = control.api();
 
             logger.debug(control.toString());
-            logger.debug(klass.getTypeName() + "#" + option.getMethod().getName());
+            logger.debug(option.getMethod().getDeclaringClass().getTypeName() + "#" + option.getMethod().getName());
 
             for (Controller.Api api : apis) {
                 String url = api.url();
@@ -163,49 +162,4 @@ public class ServerStarter {
             }
         };
     }
-
-    /*public static Consumer<Controller.Control> initControlMethod(HttpServer server, Class<?> klass, Object handler, Method method) {
-        return control -> {
-            Controller.Api[] apis = control.api();
-
-            logger.debug(control.toString());
-            logger.debug(klass.getTypeName() + "#" + method.getName());
-
-            for (Controller.Api api : apis) {
-                List<String> httpMethods = Stream.of(api.methods())
-                        .map(HttpMethod::getMethod)
-                        .collect(Collectors.toList());
-
-                server.createContext(api.url(), httpExchange -> {
-                    // 处理跨域
-                    if (HandlerUtil.crosPack(httpExchange)) {
-                        return;
-                    }
-
-                    String requestMethod = httpExchange.getRequestMethod();
-                    logger.info(requestMethod + " " + api.url() + "");
-                    // 过滤method
-                    if (!httpMethods.contains(requestMethod)) {
-                        ResponseUtil.end(httpExchange, 404);
-                        return;
-                    }
-
-                    try {
-                        Object responseObj = method.invoke(handler, httpExchange);
-                        if (responseObj != null) {
-                            String response = responseObj.toString();
-                            ResponseUtil.end(httpExchange, 200, response);
-                        }
-                    } catch (IOException | IllegalAccessException | InvocationTargetException e) {
-                        logger.error("handler execute error", e);
-                        ResponseUtil.end(httpExchange, 500, e.getMessage());
-                    } catch (Message e) {
-                        logger.error(e.getMessage(), e);
-                        ResponseUtil.end(httpExchange, 501, e.getMessage());
-                    }
-                });
-            }
-        };
-    }*/
-
 }
