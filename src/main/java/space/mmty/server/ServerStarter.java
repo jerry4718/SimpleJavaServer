@@ -5,8 +5,9 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.log4j.*;
 import space.mmty.annotation.Controller;
 import space.mmty.annotation.ServerMain;
-import space.mmty.constant.HttpMethods;
+import space.mmty.constant.HttpMethod;
 import space.mmty.exception.Message;
+import space.mmty.module.HttpMethodInvokeOption;
 import space.mmty.util.AnnotationUtil;
 import space.mmty.util.HandlerUtil;
 import space.mmty.util.PackageUtil;
@@ -16,12 +17,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @ServerMain(controllerPackages = {
         "space.mmty.controller"
@@ -55,39 +55,110 @@ public class ServerStarter {
 
             logger.debug(JSONObject.toJSONString(controllerPackages));
 
+            Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper = new HashMap<>();
+
             for (String controllerPackage : controllerPackages) {
                 PackageUtil.scanPacket(
                         controllerPackage,
                         klass -> AnnotationUtil.execIfIsPresent(klass, Controller.class)
-                                .accept(initController(server, klass))
+                                .accept(initController(server, klass, restMapper))
                 );
+            }
+
+            for (Map.Entry<String, Map<HttpMethod, HttpMethodInvokeOption>> bindRest : restMapper.entrySet()) {
+                String restUrl = bindRest.getKey();
+                Map<HttpMethod, HttpMethodInvokeOption> restHolder = bindRest.getValue();
+
+                server.createContext(restUrl, httpExchange -> {
+                    // 处理跨域
+                    if (HandlerUtil.crosPack(httpExchange)) {
+                        return;
+                    }
+
+                    HttpMethod httpMethod = HttpMethod.valueOf(httpExchange.getRequestMethod());
+                    logger.info(httpMethod.getMethod() + " " + restUrl + "");
+
+                    // 过滤method
+                    if (!restHolder.containsKey(httpMethod)) {
+                        ResponseUtil.end(httpExchange, 404, "404 Not Found");
+                        return;
+                    }
+
+                    HttpMethodInvokeOption option = restHolder.get(httpMethod);
+
+                    try {
+                        Object responseObj = option.invoke(httpExchange);
+                        if (responseObj != null) {
+                            ResponseUtil.end(httpExchange, 200, responseObj.toString());
+                        } else {
+                            ResponseUtil.end(httpExchange, 200);
+                        }
+                    } catch (IOException | IllegalAccessException | InvocationTargetException e) {
+                        e.printStackTrace();
+                        ResponseUtil.end(httpExchange, 500, e.getMessage());
+                    } catch (Message e) {
+                        e.printStackTrace();
+                        ResponseUtil.end(httpExchange, 501, e.getMessage());
+                    }
+                });
             }
         };
     }
 
-    public static Consumer<Controller> initController(HttpServer server, Class<?> klass) {
+    public static Consumer<Controller> initController(HttpServer server, Class<?> klass, Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper) {
         return controller -> {
             logger.debug(controller.toString());
             logger.debug(klass.getTypeName());
 
-            Object handler = null;
+            Object handler;
             try {
                 handler = klass.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
                 e.printStackTrace();
+                logger.error("create controller instance error", e);
+                return;
             }
-            Object finalHandler = handler;
 
             Method[] methods = klass.getMethods();
 
             for (Method method : methods) {
                 AnnotationUtil.execIfIsPresent(method, Controller.Control.class)
-                        .accept(initControlMethod(server, klass, finalHandler, method));
+                        .accept(initRestMapper(klass, restMapper, new HttpMethodInvokeOption(method, handler)));
+            }
+            // initControlMethod(server, klass, finalHandler, method)
+        };
+    }
+
+    public static Consumer<Controller.Control> initRestMapper(Class<?> klass, Map<String, Map<HttpMethod, HttpMethodInvokeOption>> restMapper, HttpMethodInvokeOption option) {
+        return control -> {
+            Controller.Api[] apis = control.api();
+
+            logger.debug(control.toString());
+            logger.debug(klass.getTypeName() + "#" + option.getMethod().getName());
+
+            for (Controller.Api api : apis) {
+                String url = api.url();
+                for (HttpMethod httpMethod: api.methods()) {
+                    Map<HttpMethod, HttpMethodInvokeOption> restHolder;
+
+                    if (restMapper.containsKey(url)) {
+                        restHolder = restMapper.get(url);
+                    } else {
+                        restHolder = new HashMap<>();
+                        restMapper.put(url, restHolder);
+                    }
+
+                    if (restHolder.containsKey(httpMethod)) {
+                        logger.warn("method \"" + httpMethod.getMethod() + "\" has already exist, that old one will be covered");
+                    }
+
+                    restHolder.put(httpMethod, option);
+                }
             }
         };
     }
 
-    public static Consumer<Controller.Control> initControlMethod(HttpServer server, Class<?> klass, Object handler, Method method) {
+    /*public static Consumer<Controller.Control> initControlMethod(HttpServer server, Class<?> klass, Object handler, Method method) {
         return control -> {
             Controller.Api[] apis = control.api();
 
@@ -96,7 +167,7 @@ public class ServerStarter {
 
             for (Controller.Api api : apis) {
                 List<String> httpMethods = Stream.of(api.methods())
-                        .map(HttpMethods::getMethod)
+                        .map(HttpMethod::getMethod)
                         .collect(Collectors.toList());
 
                 server.createContext(api.url(), httpExchange -> {
@@ -129,6 +200,6 @@ public class ServerStarter {
                 });
             }
         };
-    }
+    }*/
 
 }

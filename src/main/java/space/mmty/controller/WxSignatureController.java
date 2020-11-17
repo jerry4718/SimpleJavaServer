@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import space.mmty.annotation.Controller;
 import space.mmty.config.WxConfig;
-import space.mmty.constant.HttpMethods;
+import space.mmty.constant.HttpMethod;
 import space.mmty.exception.Message;
 import space.mmty.util.HttpUtil;
 import space.mmty.util.RequestUtil;
@@ -20,7 +20,7 @@ public class WxSignatureController {
     private static final Logger logger = Logger.getLogger(WxSignatureController.class);
 
     @Controller.Control(api = {
-            @Controller.Api(url = "/wxSignature", methods = {HttpMethods.GET, HttpMethods.POST})
+            @Controller.Api(url = "/wxSignature", methods = {HttpMethod.GET, HttpMethod.POST})
     })
     public String control(HttpExchange exchange) {
         String query = exchange.getRequestURI().getQuery();

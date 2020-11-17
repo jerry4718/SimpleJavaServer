@@ -1,6 +1,6 @@
 package space.mmty.constant;
 
-public enum HttpMethods {
+public enum HttpMethod {
     OPTIONS("OPTIONS"),
     GET("GET"),
     POST("POST"),
@@ -18,7 +18,7 @@ public enum HttpMethods {
     VIEW("VIEW");
 
     private final String method;
-    HttpMethods(String method) {
+    HttpMethod(String method) {
         this.method = method;
     }
 

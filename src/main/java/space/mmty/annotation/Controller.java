@@ -1,6 +1,6 @@
 package space.mmty.annotation;
 
-import space.mmty.constant.HttpMethods;
+import space.mmty.constant.HttpMethod;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -19,7 +19,7 @@ public @interface Controller {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({})
     @interface Api {
-        HttpMethods[] methods() default {HttpMethods.GET};
+        HttpMethod[] methods() default {HttpMethod.GET};
 
         String url();
     }
