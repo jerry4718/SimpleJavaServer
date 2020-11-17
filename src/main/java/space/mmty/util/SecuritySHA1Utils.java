@@ -19,8 +19,7 @@ public class SecuritySHA1Utils {
         try {
             sha = MessageDigest.getInstance("SHA");
         } catch (NoSuchAlgorithmException e) {
-            logger.info("java获取SHA加密失败");
-            e.printStackTrace();
+            logger.error("java获取SHA加密失败", e);
             sha = null;
         }
 

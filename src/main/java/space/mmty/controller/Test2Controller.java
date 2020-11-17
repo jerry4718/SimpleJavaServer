@@ -21,12 +21,6 @@ public class Test2Controller {
             response.append(Math.random());
         }
 
-        /*try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
         return response.toString();
     }
 }

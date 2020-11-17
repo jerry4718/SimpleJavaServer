@@ -1,5 +1,7 @@
 package space.mmty.util;
 
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.JarURLConnection;
@@ -11,6 +13,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class PackageUtil {
+    private static final Logger logger = Logger.getLogger(PackageUtil.class);
+
     private static void packetScanner(File curFile, String packName, Consumer<Class<?>> dealClass) {
         if (!curFile.isDirectory()) {
             return;
@@ -27,7 +31,7 @@ public class PackageUtil {
                     Class<?> klass = Class.forName(className);
                     dealClass.accept(klass);
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    logger.error("class deal error", e);
                 }
             } else if (file.isDirectory()) {
                 packetScanner(file, packName + "." + file.getName(), dealClass);
@@ -56,7 +60,7 @@ public class PackageUtil {
                 }
                 dealClass.accept(klass);
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.error("class deal error", e);
             }
         }
     }
@@ -79,7 +83,7 @@ public class PackageUtil {
                 }
             }
         } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
+            logger.error("class scan error", e);
         }
     }
 }

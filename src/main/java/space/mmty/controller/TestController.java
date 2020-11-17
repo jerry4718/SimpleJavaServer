@@ -9,6 +9,7 @@ public class TestController {
 
     @Controller.Control(api = {
             @Controller.Api(url = "/", methods = HttpMethod.GET),
+            @Controller.Api(url = "/test", methods = {HttpMethod.GET, HttpMethod.POST}),
             @Controller.Api(url = "/test", methods = {HttpMethod.GET, HttpMethod.POST})
     })
     public String control(HttpExchange exchange) {
@@ -20,12 +21,6 @@ public class TestController {
             }
             response.append(Math.random());
         }
-
-        /*try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
 
         return response.toString();
     }

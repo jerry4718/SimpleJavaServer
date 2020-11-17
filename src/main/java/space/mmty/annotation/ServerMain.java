@@ -9,4 +9,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ServerMain {
     String[] controllerPackages() default {};
+    String[] filterPackages() default {};
+    int port() default 8000;
 }

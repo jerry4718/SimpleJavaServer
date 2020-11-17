@@ -23,13 +23,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-@ServerMain(controllerPackages = {
-        "space.mmty.controller"
-})
+@ServerMain(
+        port = 8001,
+        controllerPackages = {"space.mmty.controller"}
+)
 public class ServerStarter {
     private static final Logger root_logger = Logger.getRootLogger();
     private static final Logger logger = Logger.getLogger(ServerStarter.class);
-    private static final Integer port = 8001;
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -38,15 +38,22 @@ public class ServerStarter {
         root_logger.setLevel(Level.DEBUG);
     }
 
-    public static void main(String[] args) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.setExecutor(executor);
-
+    public static void main(String[] args) {
         AnnotationUtil.execIfIsPresent(ServerStarter.class, ServerMain.class)
-                .accept(initServerMain(server));
+                .accept(serverMain -> {
+                    try {
+                        int port = serverMain.port();
+                        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+                        server.setExecutor(executor);
 
-        server.start();
-        logger.info("Server started on http://localhost:" + port);
+                        initServerMain(server).accept(serverMain);
+
+                        server.start();
+                        logger.info("Server started on http://localhost:" + port);
+                    } catch (IOException e) {
+                        logger.error("Server started error", e);
+                    }
+                });
     }
 
     public static Consumer<ServerMain> initServerMain(HttpServer server) {
@@ -94,10 +101,10 @@ public class ServerStarter {
                             ResponseUtil.end(httpExchange, 200);
                         }
                     } catch (IOException | IllegalAccessException | InvocationTargetException e) {
-                        e.printStackTrace();
+                        logger.error("handler execute error", e);
                         ResponseUtil.end(httpExchange, 500, e.getMessage());
                     } catch (Message e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                         ResponseUtil.end(httpExchange, 501, e.getMessage());
                     }
                 });
@@ -114,7 +121,6 @@ public class ServerStarter {
             try {
                 handler = klass.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
                 logger.error("create controller instance error", e);
                 return;
             }
@@ -138,7 +144,7 @@ public class ServerStarter {
 
             for (Controller.Api api : apis) {
                 String url = api.url();
-                for (HttpMethod httpMethod: api.methods()) {
+                for (HttpMethod httpMethod : api.methods()) {
                     Map<HttpMethod, HttpMethodInvokeOption> restHolder;
 
                     if (restMapper.containsKey(url)) {
@@ -149,7 +155,7 @@ public class ServerStarter {
                     }
 
                     if (restHolder.containsKey(httpMethod)) {
-                        logger.warn("method \"" + httpMethod.getMethod() + "\" has already exist, that old one will be covered");
+                        logger.warn("method \"" + httpMethod.getMethod() + "\" " + url + " has already exist, that old one will be covered");
                     }
 
                     restHolder.put(httpMethod, option);
@@ -191,10 +197,10 @@ public class ServerStarter {
                             ResponseUtil.end(httpExchange, 200, response);
                         }
                     } catch (IOException | IllegalAccessException | InvocationTargetException e) {
-                        e.printStackTrace();
+                        logger.error("handler execute error", e);
                         ResponseUtil.end(httpExchange, 500, e.getMessage());
                     } catch (Message e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                         ResponseUtil.end(httpExchange, 501, e.getMessage());
                     }
                 });

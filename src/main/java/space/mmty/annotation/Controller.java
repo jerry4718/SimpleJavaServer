@@ -19,7 +19,7 @@ public @interface Controller {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({})
     @interface Api {
-        HttpMethod[] methods() default {HttpMethod.GET};
+        HttpMethod[] methods() default HttpMethod.GET;
 
         String url();
     }
