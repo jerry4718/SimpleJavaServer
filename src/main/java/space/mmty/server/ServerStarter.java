@@ -33,7 +33,7 @@ public class ServerStarter {
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
-        RequestUtil.ParamGetter params = RequestUtil.packParams(StringUtils.join(args, "&"));
+        RequestUtil.ParamGetter params = RequestUtil.packParams(args);
 
         BasicConfigurator.configure(new ConsoleAppender(new PatternLayout(
                 params.get("pattern", PatternLayout.TTCC_CONVERSION_PATTERN)

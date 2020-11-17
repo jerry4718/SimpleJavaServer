@@ -5,18 +5,25 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class RequestUtil {
-
     public static ParamGetter packParams(String query) {
         return new ParamGetter(parseParams(query));
     }
 
+    public static ParamGetter packParams(String[] splits) {
+        return new ParamGetter(parseParams(splits));
+    }
+
     public static Map<String, List<String>> parseParams(String query) {
-        Map<String, List<String>> params = new HashMap<>();
         if (query == null) {
-            return params;
+            return new HashMap<>();
         }
         String[] splits = query.replaceFirst("^\\?", "").split("&");
         // logger.info(JSONObject.toJSONString(splits));
+        return parseParams(splits);
+    }
+
+    public static Map<String, List<String>> parseParams(String[] splits) {
+        Map<String, List<String>> params = new HashMap<>();
 
         for (String split : splits) {
             List<String> pair = Arrays.asList(split.split("="));
