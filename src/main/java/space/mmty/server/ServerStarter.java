@@ -16,8 +16,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -33,30 +33,20 @@ public class ServerStarter {
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n")));
+        RequestUtil.ParamGetter params = RequestUtil.packParams(StringUtils.join(args, "&"));
 
-        Map<String, List<String>> params = RequestUtil.parseParams(StringUtils.join(args, "&"));
-
-        List<String> loglevelParams = params.get("loglevel");
-
-        if (loglevelParams.isEmpty()) {
-            root_logger.setLevel(Level.DEBUG);
-        } else {
-            root_logger.setLevel(Level.toLevel(loglevelParams.get(0)));
-        }
+        String defaultPattern = "[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n";
+        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout(params.getParam("pattern", defaultPattern))));
+        root_logger.setLevel(params.getParam("loglevel", Level::toLevel, () -> Level.DEBUG));
 
         System.out.println(JSONObject.toJSONString(args));
 
         AnnotationUtil.execIfIsPresent(ServerStarter.class, ServerMain.class)
                 .accept(serverMain -> {
                     try {
-                        int port = serverMain.port();
+                        Integer port = params.getParam("port", Integer::parseInt, serverMain::port);
 
-                        List<String> portParams = params.get("port");
-                        if (!portParams.isEmpty()) {
-                            port = Integer.parseInt(portParams.get(0));
-                        }
-
+                        Objects.requireNonNull(port);
                         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
                         server.setExecutor(executor);
 

@@ -26,10 +26,10 @@ public class WxSignatureController {
         String query = exchange.getRequestURI().getQuery();
         logger.info(query);
 
-        Map<String, List<String>> params = RequestUtil.parseParams(query);
+        RequestUtil.ParamGetter params = RequestUtil.packParams(query);
 
         // url参数
-        String url = params.get("url").get(0);
+        String url = params.getParam("url");
 
 
         // 拼接上传参数 获取access_token
