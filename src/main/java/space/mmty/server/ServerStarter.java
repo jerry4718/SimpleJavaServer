@@ -35,16 +35,18 @@ public class ServerStarter {
     public static void main(String[] args) {
         RequestUtil.ParamGetter params = RequestUtil.packParams(StringUtils.join(args, "&"));
 
-        String defaultPattern = "[%d{yyyy-MM-dd HH:mm:ss}|%-5p|%-30.40c] - %m%n";
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout(params.getParam("pattern", defaultPattern))));
-        root_logger.setLevel(params.getParam("loglevel", Level::toLevel, () -> Level.DEBUG));
+        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout(
+                params.get("pattern", PatternLayout.TTCC_CONVERSION_PATTERN)
+        )));
+
+        root_logger.setLevel(params.get("loglevel", Level::toLevel, () -> Level.DEBUG));
 
         System.out.println(JSONObject.toJSONString(args));
 
         AnnotationUtil.execIfIsPresent(ServerStarter.class, ServerMain.class)
                 .accept(serverMain -> {
                     try {
-                        Integer port = params.getParam("port", Integer::parseInt, serverMain::port);
+                        Integer port = params.get("port", Integer::parseInt, serverMain::port);
 
                         Objects.requireNonNull(port);
                         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);

@@ -29,7 +29,7 @@ public class WxSignatureController {
         RequestUtil.ParamGetter params = RequestUtil.packParams(query);
 
         // url参数
-        String url = params.getParam("url");
+        String url = params.get("url");
 
 
         // 拼接上传参数 获取access_token

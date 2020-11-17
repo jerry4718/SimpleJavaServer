@@ -70,16 +70,16 @@ public class RequestUtil {
             this.params = params;
         }
 
-        public <T> T getParam(String paramName, Function<String, T> converter, Supplier<T> defaultValue) {
-            return RequestUtil.getParam(params, paramName, converter, defaultValue);
+        public <T> T get(String paramName, Function<String, T> converter, Supplier<T> defaultValue) {
+            return getParam(params, paramName, converter, defaultValue);
         }
 
-        public String getParam(String paramName, String defaultValue) {
-            return RequestUtil.getParam(params, paramName, defaultValue);
+        public String get(String paramName, String defaultValue) {
+            return getParam(params, paramName, defaultValue);
         }
 
-        public String getParam(String paramName) {
-            return RequestUtil.getParam(params, paramName, null);
+        public String get(String paramName) {
+            return getParam(params, paramName, null);
         }
     }
 }
